@@ -7,7 +7,7 @@ import math
 import torch
 from abc import ABC,  abstractmethod
 from typing import Optional, Tuple, Callable
-from natten.functional import natten1dav, natten1dqkrpb, natten2dav, natten2dqkrpb
+from natten.functional import na1d_av, na1d_qk, na2d_av, na2d_qk
 from ..config import Config
 from .utils import *
 
@@ -51,9 +51,9 @@ class DinatDropPath(nn.Module):
 class _NeighborhoodAttentionNd(ABC, nn.Module):
   # rpb is learnable relative positional biases; same concept is used Swin.
   rpb: nn.Parameter
-  nattendqkrpb: Callable
+  na1d_qk: Callable
   nattendav: Callable
-  
+
   def __init__(
     self,
     cfg: Config,
@@ -96,8 +96,8 @@ class _NeighborhoodAttentionNd(ABC, nn.Module):
     
     # Compute NA between "query" and "key" to get the raw attention scores, and add relative positional biases.
     # attention_scores = natten2dqkrpb(query_layer, key_layer, self.rpb, self.dilation)
-    attention_scores = self.nattendqkrpb(query_layer, key_layer, self.rpb, self.kernel_size, self.dilation)
-    
+    attention_scores = self.na_qk(query_layer, key_layer,  self.kernel_size, self.dilation, rpb=self.rpb)
+
     # Normalize the attention scores to probabilities.
     attention_probs = nn.functional.softmax(attention_scores, dim=-1)
     
@@ -141,8 +141,8 @@ class NeighborhoodAttention1d(_NeighborhoodAttentionNd):
       torch.zeros(num_heads, (2 * self.kernel_size - 1)),
       requires_grad=True,
     )
-    self.nattendqkrpb = natten1dqkrpb
-    self.nattendav = natten1dav
+    self.na_qk = na1d_qk
+    self.nattendav = na1d_av
 
 
 class NeighborhoodAttention2d(_NeighborhoodAttentionNd):
@@ -159,8 +159,8 @@ class NeighborhoodAttention2d(_NeighborhoodAttentionNd):
       torch.zeros(num_heads, (2 * self.kernel_size - 1), (2 * self.kernel_size - 1)),
       requires_grad=True,
     )
-    self.nattendqkrpb = natten2dqkrpb
-    self.nattendav = natten2dav
+    self.na_qk = na2d_qk
+    self.nattendav = na2d_av
 
 
 # Copied from transformers.models.nat.modeling_nat.NeighborhoodAttentionOutput
