@@ -66,7 +66,7 @@ make
 
 ```shell
 pip install git+https://github.com/CPJKU/madmom  # install the latest madmom directly from GitHub
-pip install allin1  # install this package
+pip install git+https://github.com/not-matt/all-in-one  # install this package 
 ```
 
 ### 4. (Optional) Install FFmpeg for MP3 support
