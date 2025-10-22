@@ -23,7 +23,7 @@ except ImportError:
         # ── 3. Modern >=0.20: Building wrappers based on generic functions
         from natten.functional import neighborhood_attention_generic as _na_generic
 
-        def wrap_qk(dim: int) -> Callable:
+        def _wrap_qk(dim: int) -> Callable:
             """(factory: creates a q-k function for 1-D or 2-D"""
             def _fn(q, k, kernel, dilation, *, rpb=None):
                 ks = kernel if dim == 2 else int(kernel)          # (k,k)  или  k
