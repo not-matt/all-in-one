@@ -1,6 +1,6 @@
 import torch
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Callable
 from tqdm import tqdm
 from .demix import demix
 from .spectrogram import extract_spectrograms
@@ -32,7 +32,7 @@ def analyze(
   keep_byproducts: bool = False,
   overwrite: bool = False,
   multiprocess: bool = True,
-  onProgress: Optional[callable[[int, str], None]] = None,
+  onProgress: Optional[Callable[[int, str], None]] = None,
 ) -> Union[AnalysisResult, List[AnalysisResult]]:
   """
   Analyzes the provided audio files and returns the analysis results.
