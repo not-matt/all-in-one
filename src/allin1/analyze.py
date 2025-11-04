@@ -1,6 +1,6 @@
 import torch
 
-from typing import List, Union
+from typing import List, Optional, Union
 from tqdm import tqdm
 from .demix import demix
 from .spectrogram import extract_spectrograms
@@ -32,6 +32,7 @@ def analyze(
   keep_byproducts: bool = False,
   overwrite: bool = False,
   multiprocess: bool = True,
+  onProgress: Optional[callable[[int, str], None]] = None,
 ) -> Union[AnalysisResult, List[AnalysisResult]]:
   """
   Analyzes the provided audio files and returns the analysis results.
@@ -74,6 +75,9 @@ def analyze(
       Analysis results for the provided audio files.
   """
 
+  if onProgress:
+    onProgress(0, 'Starting analysis')
+
   # Clean up the arguments.
   return_list = True
   if not isinstance(paths, list):
@@ -115,17 +119,26 @@ def analyze(
   # Analyze the tracks that are not analyzed yet.
   if todo_paths:
     # Run HTDemucs for source separation only for the tracks that are not analyzed yet.
+    if onProgress:
+      onProgress(20, 'Demixing audio sources')
     demix_paths = demix(todo_paths, demix_dir, device)
 
     # Extract spectrograms for the tracks that are not analyzed yet.
+    if onProgress:
+      onProgress(40, 'Extracting spectrograms')
     spec_paths = extract_spectrograms(demix_paths, spec_dir, multiprocess)
 
     # Load the model.
+    if onProgress:
+      onProgress(60, 'Loading model')
     model = load_pretrained_model(
       model_name=model,
       device=device,
     )
 
+    # Run the inference.
+    if onProgress:
+      onProgress(80, 'Running inference')
     with torch.no_grad():
       pbar = tqdm(zip(todo_paths, spec_paths), total=len(todo_paths))
       for path, spec_path in pbar:
@@ -152,12 +165,16 @@ def analyze(
   results = sorted(results, key=lambda result: paths.index(result.path))
 
   if visualize:
+    if onProgress:
+      onProgress(90, 'Visualizing results')
     if visualize is True:
       visualize = './viz'
     _visualize(results, out_dir=visualize, multiprocess=multiprocess)
     print(f'=> Plots are successfully saved to {visualize}')
 
   if sonify:
+    if onProgress:
+      onProgress(95, 'Sonifying results')
     if sonify is True:
       sonify = './sonif'
     _sonify(results, out_dir=sonify, multiprocess=multiprocess)
@@ -174,6 +191,9 @@ def analyze(
     for path in spec_paths:
       path.unlink(missing_ok=True)
     rmdir_if_empty(spec_dir)
+
+  if onProgress:
+    onProgress(100, 'Analysis complete')
 
   if not return_list:
     return results[0]
