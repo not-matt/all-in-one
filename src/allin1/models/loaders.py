@@ -1,5 +1,7 @@
 import torch
+import os
 
+from pathlib import Path
 from typing import Optional
 from omegaconf import OmegaConf
 from huggingface_hub import hf_hub_download
@@ -50,7 +52,11 @@ def load_pretrained_model(
       device = 'cpu'
 
   filename = NAME_TO_FILE[model_name]
-  checkpoint_path = hf_hub_download(repo_id='taejunkim/allinone', filename=filename, cache_dir=cache_dir)
+  local_path = Path(__file__).parent / 'pretrained' / filename
+  if local_path.exists():
+    checkpoint_path = str(local_path)
+  else:
+    checkpoint_path = hf_hub_download(repo_id='taejunkim/allinone', filename=filename, cache_dir=cache_dir)
 
   checkpoint = torch.load(checkpoint_path, map_location=device)
   config = OmegaConf.create(checkpoint['config'])
